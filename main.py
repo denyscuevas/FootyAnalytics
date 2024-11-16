@@ -1,8 +1,14 @@
+import json
 from understatapi import UnderstatClient
 
 from fastapi import FastAPI
 app = FastAPI()
 understat = UnderstatClient()
+
+
+@app.get("/")
+def main():
+    return "HELLO THERE"
 
 @app.get("/get-teamData")
 def getTeamsData(): 
@@ -29,20 +35,28 @@ def getPlayersFromTeam(teamName : str):
         return players
     
 
-@app.get("/match-data")
+@app.get("/player-data")
 # get match data from a specific game
-def getMatchData(playerName : str):
-    # getMatchData will be able to get either match data from the game itself 
-    # or from a specific player specified by the client
-    #
-    if playerName == "any":
-        #we want to return match data
-        data = understat.league("EPL").get_match_data("2024")
-    else:
-        #we want to return specific player match data
-        for player in getPlayersFromTeam("any"):
-            if player["player_name"] == playerName:
-                data = player
-
+def getPlayerData(playerName : str, season : str):
+    # getPlayerData such as shot data, match-data, season-data
+    # have got to get playerID
     
-    return data
+    playerID = None
+    for player in getPlayersFromTeam("any"):
+        #get players in the 2024 season
+        if player["player_name"] == playerName:
+            playerID = player["id"]
+    
+    if playerID:
+        shotData = understat.player(playerID).get_shot_data()
+    else:
+        return "NOT FOUND"
+    
+    seasonShotData = []
+    
+    for data in shotData:
+        if data["season"] == season :
+            seasonShotData.append(data)
+    return seasonShotData
+
+	
